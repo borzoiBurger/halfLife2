@@ -29,7 +29,7 @@ fi
 
 # load in vcs_info to provide version control system info
 autoload -Uz vcs_info
-zstyle ':vcs_info:*+*:*' debug true # uncomment to print debug info
+# zstyle ':vcs_info:*+*:*' debug true # uncomment to print debug info
 
 # enable VCS systems you use
 zstyle ':vcs_info:*' enable git svn
@@ -112,7 +112,7 @@ PROMPT=$THEME_PROMPT
 function updatePrompt {
   if [[ -n "${vcs_info_msg_0_}" ]]; then
     CURR_REL_PATH=$(echo "$vcs_info_msg_1_" | sed 's/\/\.$//')
-    PROMPT="${purple}${GIT_ENV_USER}%{$reset_color%} in ${limegreen}${CURR_REL_PATH}%{$reset_color%}\$(virtualenv_prompt_info)\$(ruby_prompt_info)\$vcs_info_msg_0_${orange} λ%{$reset_color%} "
+    PROMPT="${purple}$(git config --local user.name || echo "%n")%{$reset_color%} in ${limegreen}${CURR_REL_PATH}%{$reset_color%}\$(virtualenv_prompt_info)\$(ruby_prompt_info)\$vcs_info_msg_0_${orange} λ%{$reset_color%} "
   else
     PROMPT=$THEME_PROMPT
   fi
