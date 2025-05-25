@@ -1,3 +1,6 @@
+# the following is a modification of the ohMyZsh half-life theme (https://github.com/ohmyzsh/ohmyzsh/blob/master/themes/half-life.zsh-theme)
+# which shortens the users prompt when in a repository with a vcs 
+#
 # prompt style and colors based on Steve Losh's Prose theme:
 # https://github.com/sjl/oh-my-zsh/blob/master/themes/prose.zsh-theme
 #
@@ -7,22 +10,27 @@
 # git untracked files modification from Brian Carper:
 # https://briancarper.net/blog/570/git-info-in-your-zsh-prompt
 
-#use extended color palette if available
+
+# use extended color palette if available
+# note: reset_color seems to be automatically set
 if [[ $TERM = (*256color|*rxvt*) ]]; then
-  turquoise="%{${(%):-"%F{81}"}%}"
-  orange="%{${(%):-"%F{166}"}%}"
-  purple="%{${(%):-"%F{135}"}%}"
-  hotpink="%{${(%):-"%F{161}"}%}"
-  limegreen="%{${(%):-"%F{118}"}%}"
+  turquoise="%F{81}"
+  orange="%F{166}"
+  purple="%F{135}"
+  hotpink="%F{161}"
+  limegreen="%F{118}"
 else
-  turquoise="%{${(%):-"%F{cyan}"}%}"
-  orange="%{${(%):-"%F{yellow}"}%}"
-  purple="%{${(%):-"%F{magenta}"}%}"
-  hotpink="%{${(%):-"%F{red}"}%}"
-  limegreen="%{${(%):-"%F{green}"}%}"
+  turquoise="%F{cyan}"
+  orange="%F{yellow}"
+  purple="%F{magenta}"
+  hotpink="%F{red}"
+  limegreen="%F{green}"
 fi
 
+# load in vcs_info to provide version control system info
 autoload -Uz vcs_info
+zstyle ':vcs_info:*+*:*' debug true # uncomment to print debug info
+
 # enable VCS systems you use
 zstyle ':vcs_info:*' enable git svn
 
@@ -30,7 +38,7 @@ zstyle ':vcs_info:*' enable git svn
 # you should disable it, if you work with large repositories
 zstyle ':vcs_info:*:prompt:*' check-for-changes true
 
-# set formats
+# set formats (https://github.com/zsh-users/zsh/blob/master/Functions/VCS_Info/VCS_INFO_formats)
 # %b - branchname
 # %u - unstagedstr (see below)
 # %c - stagedstr (see below)
@@ -70,7 +78,9 @@ function steeef_precmd {
   else
     FMT_BRANCH="${PM_RST} on ${turquoise}%b%u%c${PR_RST}"
   fi
-  zstyle ':vcs_info:*:prompt:*' formats       "${FMT_BRANCH}"
+
+  # preps for vcs_info call on provided format strings, stores in vcs_info_msg_<n>_
+  zstyle ':vcs_info:*:prompt:*' formats "${FMT_BRANCH}" "%r/%S"
 
   vcs_info 'prompt'
   PR_GIT_UPDATE=
@@ -99,21 +109,14 @@ THEME_PROMPT="${purple}%n%{$reset_color%} in ${limegreen}%~%{$reset_color%}\$(vi
 PROMPT=$THEME_PROMPT
 
 # update prompt when in direnv "custom prompt" environment
-function checkDirenv {
-  case "${CUSTOM_ENV_TYPE:-none}" in
-    "none")
-      PROMPT=$THEME_PROMPT
-      ;;
-    "git")
-      CURR_REL_PATH=$(realpath --relative-to=$CURR_ENV_ROOT $PWD || echo "")
-      CURR_REL_PATH=$(echo "${${${CURR_REL_PATH}:+$(basename $CURR_ENV_ROOT)/${CURR_REL_PATH}}:-%~}" | sed 's/\/\.$//')
-      PROMPT="${purple}${GIT_ENV_USER}%{$reset_color%} in ${limegreen}${CURR_REL_PATH}%{$reset_color%}\$(virtualenv_prompt_info)\$(ruby_prompt_info)\$vcs_info_msg_0_${orange} λ%{$reset_color%} "
-      ;;
-    "*")
-      echo "Custom Env Type '${CUSTOM_ENV_TYPE}' is unimplemented"
-      ;;
-  esac
+function updatePrompt {
+  if [[ -n "${vcs_info_msg_0_}" ]]; then
+    CURR_REL_PATH=$(echo "$vcs_info_msg_1_" | sed 's/\/\.$//')
+    PROMPT="${purple}${GIT_ENV_USER}%{$reset_color%} in ${limegreen}${CURR_REL_PATH}%{$reset_color%}\$(virtualenv_prompt_info)\$(ruby_prompt_info)\$vcs_info_msg_0_${orange} λ%{$reset_color%} "
+  else
+    PROMPT=$THEME_PROMPT
+  fi
 }
 
 # run check before printing prompt each time
-add-zsh-hook precmd checkDirenv
+add-zsh-hook precmd updatePrompt
